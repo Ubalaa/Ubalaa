@@ -14,7 +14,7 @@ class OKX {
             "Content-Type": "application/json",
             "Origin": "https://www.okx.com",
             "Referer": "https://www.okx.com/mini-app/racer?tgWebAppStartParam=linkCode_85298986",
-            "Sec-Ch-Ua": '"Not/A)Brand";v="8", "Chromium";v="126", "Microsoft Edge";v="126"',
+            "Sec-Ch-Ua": '"Not/A)Brand";v="8", "Chromium";v="126", "Microsoft Edge";v="126", "Microsoft Edge WebView2";v="126"',
             "Sec-Ch-Ua-Mobile": "?0",
             "Sec-Ch-Ua-Platform": '"Windows"',
             "Sec-Fetch-Dest": "empty",
@@ -28,9 +28,9 @@ class OKX {
         };
     }
 
-    async postToOKXAPI(extUserId, extUserName, queryId) {
+    async postToOKXAPI(extUserId, extUserName) {
         const url = `https://www.okx.com/priapi/v1/affiliate/game/racer/info?t=${Date.now()}`;
-        const headers = { ...this.headers(), 'X-Telegram-Init-Data': queryId };
+        const headers = this.headers();
         const payload = {
             "extUserId": extUserId,
             "extUserName": extUserName,
@@ -41,9 +41,9 @@ class OKX {
         return axios.post(url, payload, { headers });
     }
 
-    async assessPrediction(extUserId, predict, queryId) {
+    async assessPrediction(extUserId, predict) {
         const url = `https://www.okx.com/priapi/v1/affiliate/game/racer/assess?t=${Date.now()}`;
-        const headers = { ...this.headers(), 'X-Telegram-Init-Data': queryId };
+        const headers = this.headers();
         const payload = {
             "extUserId": extUserId,
             "predict": predict,
@@ -53,9 +53,9 @@ class OKX {
         return axios.post(url, payload, { headers });
     }
 
-    async checkDailyRewards(extUserId, queryId) {
-        const url = `https://www.okx.com/priapi/v1/affiliate/game/racer/tasks?t=${Date.now()}`;
-        const headers = { ...this.headers(), 'X-Telegram-Init-Data': queryId };
+    async checkDailyRewards(extUserId) {
+        const url = `https://www.okx.com/priapi/v1/affiliate/game/racer/tasks?extUserId=${extUserId}&t=${Date.now()}`;
+        const headers = this.headers();
         try {
             const response = await axios.get(url, { headers });
             const tasks = response.data.data;
@@ -63,7 +63,7 @@ class OKX {
             if (dailyCheckInTask) {
                 if (dailyCheckInTask.state === 0) {
                     this.log('Bắt đầu checkin...');
-                    await this.performCheckIn(extUserId, dailyCheckInTask.id, queryId);
+                    await this.performCheckIn(extUserId, dailyCheckInTask.id);
                 } else {
                     this.log('Hôm nay bạn đã điểm danh rồi!');
                 }
@@ -73,9 +73,9 @@ class OKX {
         }
     }
 
-    async performCheckIn(extUserId, taskId, queryId) {
+    async performCheckIn(extUserId, taskId) {
         const url = `https://www.okx.com/priapi/v1/affiliate/game/racer/task?t=${Date.now()}`;
-        const headers = { ...this.headers(), 'X-Telegram-Init-Data': queryId };
+        const headers = this.headers();
         const payload = {
             "extUserId": extUserId,
             "id": taskId
@@ -85,7 +85,7 @@ class OKX {
             await axios.post(url, payload, { headers });
             this.log('Điểm danh hàng ngày thành công!');
         } catch (error) {
-            this.log(`Lỗi rồi:: ${error.message}`);
+            this.log(`Lỗi rồi: ${error.message}`);
         }
     }
 
@@ -115,171 +115,31 @@ class OKX {
         console.log('');
     }
 
-    extractUserData(queryId) {
-        const urlParams = new URLSearchParams(queryId);
-        const user = JSON.parse(decodeURIComponent(urlParams.get('user')));
-        return {
-            extUserId: user.id,
-            extUserName: user.username
-        };
-    }
-
-    async getBoosts(queryId) {
-        const url = `https://www.okx.com/priapi/v1/affiliate/game/racer/boosts?t=${Date.now()}`;
-        const headers = { ...this.headers(), 'X-Telegram-Init-Data': queryId };
-        try {
-            const response = await axios.get(url, { headers });
-            return response.data.data;
-        } catch (error) {
-            console.log(`Lỗi lấy thông tin boosts: ${error.message}`);
-            return [];
-        }
-    }
-
-    async useBoost(queryId) {
-        const url = `https://www.okx.com/priapi/v1/affiliate/game/racer/boost?t=${Date.now()}`;
-        const headers = { ...this.headers(), 'X-Telegram-Init-Data': queryId };
-        const payload = { id: 1 };
-
-        try {
-            const response = await axios.post(url, payload, { headers });
-            if (response.data.code === 0) {
-                this.log('Reload Fuel Tank thành công!'.yellow);
-                await this.Countdown(5);
-            } else {
-                this.log(`Lỗi Reload Fuel Tank: ${response.data.msg}`.red);
-            }
-        } catch (error) {
-            this.log(`Lỗi rồi: ${error.message}`.red);
-        }
-    }
-
-    async upgradeFuelTank(queryId) {
-        const url = `https://www.okx.com/priapi/v1/affiliate/game/racer/boost?t=${Date.now()}`;
-        const headers = { ...this.headers(), 'X-Telegram-Init-Data': queryId };
-        const payload = { id: 2 };
-    
-        try {
-            const response = await axios.post(url, payload, { headers });
-            if (response.data.code === 0) {
-                this.log('Nâng cấp Fuel Tank thành công!'.yellow);
-            } else {
-                this.log(`Lỗi nâng cấp Fuel Tank: ${response.data.msg}`.red);
-            }
-        } catch (error) {
-            this.log(`Lỗi rồi: ${error.message}`.red);
-        }
-    }
-
-    async upgradeTurbo(queryId) {
-        const url = `https://www.okx.com/priapi/v1/affiliate/game/racer/boost?t=${Date.now()}`;
-        const headers = { ...this.headers(), 'X-Telegram-Init-Data': queryId };
-        const payload = { id: 3 };
-    
-        try {
-            const response = await axios.post(url, payload, { headers });
-            if (response.data.code === 0) {
-                this.log('Nâng cấp Turbo Charger thành công!'.yellow);
-            } else {
-                this.log(`Lỗi nâng cấp Turbo Charger: ${response.data.msg}`.red);
-            }
-        } catch (error) {
-            this.log(`Lỗi rồi: ${error.message}`.red);
-        }
-    }
-
-    askQuestion(query) {
-        const rl = readline.createInterface({
-            input: process.stdin,
-            output: process.stdout
-        });
-
-        return new Promise(resolve => rl.question(query, ans => {
-            rl.close();
-            resolve(ans);
-        }));
-    }
-
     async main() {
         const dataFile = path.join(__dirname, 'id.txt');
         const userData = fs.readFileSync(dataFile, 'utf8')
             .replace(/\r/g, '')
             .split('\n')
             .filter(Boolean);
-    
-        const nangcapfueltank = await this.askQuestion('Bạn có muốn nâng cấp fuel tank không? (y/n): ');
-        const hoinangcap = nangcapfueltank.toLowerCase() === 'y';
-        const nangcapturbo = await this.askQuestion('Bạn có muốn nâng cấp Turbo Charger không? (y/n): ');
-        const hoiturbo = nangcapturbo.toLowerCase() === 'y';
 
         while (true) {
             for (let i = 0; i < userData.length; i++) {
-                const queryId = userData[i];
-                const { extUserId, extUserName } = this.extractUserData(queryId);
+                const [extUserId, extUserName] = userData[i].split('|');
                 try {
-                    await this.checkDailyRewards(extUserId, queryId);
-
-                    let boosts = await this.getBoosts(queryId);
-                    boosts.forEach(boost => {
-                        this.log(`${boost.context.name.green}: ${boost.curStage}/${boost.totalStage}`);
-                    });
-                    let reloadFuelTank = boosts.find(boost => boost.id === 1);
-                    let fuelTank = boosts.find(boost => boost.id === 2);
-                    let turbo = boosts.find(boost => boost.id === 3);
-                    if (fuelTank && hoinangcap) {
-                        const balanceResponse = await this.postToOKXAPI(extUserId, extUserName, queryId);
-                        const balancePoints = balanceResponse.data.data.balancePoints;
-                        if (fuelTank.curStage < fuelTank.totalStage && balancePoints > fuelTank.pointCost) {
-                            await this.upgradeFuelTank(queryId);
-                            
-                            boosts = await this.getBoosts(queryId);
-                            const updatedFuelTank = boosts.find(boost => boost.id === 2);
-                            const updatebalanceResponse = await this.postToOKXAPI(extUserId, extUserName, queryId);
-                            const updatedBalancePoints = updatebalanceResponse.data.data.balancePoints;
-                            if (updatedFuelTank.curStage >= fuelTank.totalStage || updatedBalancePoints < fuelTank.pointCost) {
-                                this.log('Không đủ điều kiện nâng cấp Fuel Tank!'.red);
-                                continue;
-                            }
-                        } else {
-                            this.log('Không đủ điều kiện nâng cấp Fuel Tank!'.red);
-                        }
-                    }
-                    if (turbo && hoiturbo) {
-                        const balanceResponse = await this.postToOKXAPI(extUserId, extUserName, queryId);
-                        const balancePoints = balanceResponse.data.data.balancePoints;
-                        if (turbo.curStage < turbo.totalStage && balancePoints > turbo.pointCost) {
-                            await this.upgradeTurbo(queryId);
-                            
-                            boosts = await this.getBoosts(queryId);
-                            const updatedTurbo = boosts.find(boost => boost.id === 3);
-                            const updatebalanceResponse = await this.postToOKXAPI(extUserId, extUserName, queryId);
-                            const updatedBalancePoints = updatebalanceResponse.data.data.balancePoints;
-                            if (updatedTurbo.curStage >= turbo.totalStage || updatedBalancePoints < turbo.pointCost) {
-                                this.log('Nâng cấp Turbo Charger không thành công!'.red);
-                                continue;
-                            }
-                        } else {
-                            this.log('Không đủ điều kiện nâng cấp Turbo Charger!'.red);
-                        }
-                    }
+                    console.log(`========== Tài khoản ${i + 1} | ${extUserName} ==========`.blue);
+                    await this.checkDailyRewards(extUserId);
                     for (let j = 0; j < 50; j++) {
-                        const response = await this.postToOKXAPI(extUserId, extUserName, queryId);
+                        const response = await this.postToOKXAPI(extUserId, extUserName);
                         const balancePoints = response.data.data.balancePoints;
                         this.log(`${'Balance Points:'.green} ${balancePoints}`);
-    
+
                         const predict = 1;
-                        const assessResponse = await this.assessPrediction(extUserId, predict, queryId);
+                        const assessResponse = await this.assessPrediction(extUserId, predict);
                         const assessData = assessResponse.data.data;
                         const result = assessData.won ? 'Win'.green : 'Thua'.red;
                         const calculatedValue = assessData.basePoint * assessData.multiplier;
                         this.log(`Kết quả: ${result} x ${assessData.multiplier}! Balance: ${assessData.balancePoints}, Nhận được: ${calculatedValue}, Giá cũ: ${assessData.prevPrice}, Giá hiện tại: ${assessData.currentPrice}`.magenta);
-    
-                        if (assessData.numChance <= 0 && reloadFuelTank && reloadFuelTank.curStage < reloadFuelTank.totalStage) {
-                            await this.useBoost(queryId);
-    
-                            boosts = await this.getBoosts(queryId);
-                            reloadFuelTank = boosts.find(boost => boost.id === 1);
-                        } else if (assessData.numChance > 0) {
+                        if (assessData.numChance > 1) {
                             await this.Countdown(5);
                             continue;
                         } else if (assessData.secondToRefresh > 0) {
@@ -294,7 +154,7 @@ class OKX {
             }
             await this.waitWithCountdown(60);
         }
-    }    
+    }
 }
 
 if (require.main === module) {
@@ -303,4 +163,4 @@ if (require.main === module) {
         console.error(err.toString().red);
         process.exit(1);
     });
-}
+                    }
